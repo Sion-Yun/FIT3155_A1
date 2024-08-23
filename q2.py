@@ -1,15 +1,10 @@
 __author__ = "Yun Sion"
 # Github = https://github.com/Sion-Yun/FIT3155_A1
 
+import sys
 
 def z_algorithm(txt: str, pat: str) -> [int]:
     """
-    1. Implement the Z-algorithm. Your code should accept a string as input
-    and return the Z-values for the string. (Done)
-    2. Implement the Z-algorithm based exact pattern matching discussed in
-    lectures. Your code should accept a text and a pattern as inputs and
-    return (Done)
-
     TODO -  Function and approach
 
     time complexity:
@@ -22,7 +17,6 @@ def z_algorithm(txt: str, pat: str) -> [int]:
         pat (str): The pattern to match.
     :return: z_arr: array of all positions in the text where the pattern matches exactly
     """
-
     z_str = pat + "$" + txt  # combined string with terminal($)
     n = len(z_str)  # length of the combined string
     z_arr = [0] * n  # array to store Z-values
@@ -55,7 +49,7 @@ def z_algorithm(txt: str, pat: str) -> [int]:
                 while r < n and z_str[r - l] == z_str[r]:  # explicit comparison
                     r += 1
                 z_arr[k] = r - l  # updating z-value
-                r -= 1   # updating right boundary
+                r -= 1  # updating right boundary
 
     """
     Finding all occurrences of the pattern in text
@@ -67,9 +61,7 @@ def z_algorithm(txt: str, pat: str) -> [int]:
 
 
 if __name__ == '__main__':
-    # TODO - open file
-    # f = open("demofile.txt")
+    txt_file = open(sys.argv[1], "r")
+    pat_file = open(sys.argv[2], "r")
 
-    txt = 'ababcabc'
-    pat = 'bc'
-    print("pattern found at index", z_algorithm(txt, pat))
+    print("pattern found at index", z_algorithm(txt_file.read(), pat_file.read()))
