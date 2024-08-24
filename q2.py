@@ -2,6 +2,11 @@ __author__ = "Yun Sion"
 # Github = https://github.com/Sion-Yun/FIT3155_A1
 import sys
 
+cumLen, segmentLen = 0, 0
+currentSegZ = []
+previousSegZ = []
+segmentsArr = []
+noMatch = False
 
 def z_algo(txt) -> [int]:
     """
@@ -51,48 +56,148 @@ def z_algo(txt) -> [int]:
                 r -= 1
     return z  # return all z-values
 
-
-def extract_substrings(txt: str):
+# TODO - make class...
+def extract_substrings(pat: str):
     """
-    Returns a list of substrings from the input string that are separated by the '!' character.
+    Returns a list of substrings from the input pat that are separated by the '!' character.
 
     time complexity:
-        O(n), for n being the length of input string.
+        O(m), for m being the length of input pat.
     space complexity:
-        O(n), for n being the length of input string.
+        O(m), for m being the length of input pat.
 
-    :param txt: input string
+    :param pat: input pat
     :return sliced: an array of slicers between the text and '!' in pat
     """
-    # TODO - bit confusing names
-    n = len(txt)
-    substrings = []  # array of slicers to be returned
-    substring = ""  # the current substring
+    m = len(pat)
+    substrings = []  # array of the substrings
+    sub = ""  # the substring
     flag = True  # are we adding a substring?
 
-    for i in range(n):
-        if not txt[i] == '!':
+    for i in range(m):
+        if not pat[i] == '!':
             if flag:
-                substring += txt[i]
+                sub += pat[i]
             else:
-                substrings.append(substring)
-                substring = txt[i]
+                substrings.append(sub)
+                sub = pat[i]
                 flag = True
         else:
-            if flag and substring:
-                substrings.append(substring)
+            if flag and sub:
+                substrings.append(sub)
                 flag = False
                 substring = ""
 
     # append the last substring if any
-    if flag and substring:
-        substrings.append(substring)
+    if flag and sub:
+        substrings.append(sub)
 
     return substrings
 
 
+def merge_substrings(txt):
+    """
+    Merges the extracted substrings (characters) with the length of new z_algo segments.
+
+    time complexity:
+        O(n), for n being the length of text.
+    space complexity:
+        ???
+    :param txt:
+    """
+    global cumLen, segmentLen, currentSegZ, previousSegZ, noMatch
+    n = len(txt)
+    arr = [0] * n
+    k = cumLen + segmentLen  # represents the max length matched after merge
+    flag = False
+
+    # TODO - clean later
+    for i in range(n):
+        if i + k > n:  # stop looping if the remaining is < length after merged
+            break
+
+        if previousSegZ[i] == cumLen:
+            if currentSegZ[i + cumLen + segmentLen + 1] == segmentLen:
+                flag = True
+                arr[i] = k
+
+    # a no match found pointer to stop comparing further segments
+    if not flag:
+        noMatch = True
+
+    previousSegZ = arr  # make this as previous segment of Z
+
+# Function that merges previous processed zarray to length of '?'
+# O(n) - n is len(txt)
+def merge_wildcard(txt):
+    """
+    Merges the extracted substrings with the length of new z_algo segments.
+
+    time complexity:
+        O(n), for n being the length of text.
+    space complexity:
+        O(n), for n being the length of text.
+    :param txt:
+    """
+    global cumLen, mergeLen, previousSegZ
+    n = len(txt)
+    arr = [0] * n
+    k = cumLen - mergeLen  # represents the max length matched after merge
+
+    # TODO - later
+    # this handle the case when first segment is characters segment where the array is not in
+    # size of n, so when merging, it needs a shift of s
+    s = 0
+    if len(previousSegZ) > n:
+        s = len(previousSegZ) - n
+
+    for i in range(s, n):
+        if i - s + k > n:  # stop looping if the remaining is < length after merged
+            break
+
+        if previousSegZ[i] == cumLen:  # update wanted length
+            arr[i - s] = k
+
+    previousSegZ = arr  # make this as previous segment of Z
+
+# Main function to do the matching
+# O(k(n+m/k)) - k is total number of segments, n is len(txt), m is len(pat)
+def match(txt):
+    global cumLen, segmentLen, currentSegZ, previousSegZ, noMatch
+    n = len(txt)
+
+    for i in range(len(segmentsArr)):
+        if noMatch:    # stop matching further segments, if previous segment hasn't found a match
+            break
+
+        if isinstance(segmentsArr[i], str):    # when segment is characters
+            x = segmentsArr[i] + "$" + txt
+            segmentLen = len(segmentsArr[i])
+
+            if not i == 0:
+                currentSegZ = z_algo(x)
+                merge_substrings(txt)
+            else:
+                previousSegZ = z_algo(x)
+
+            cumLen += segmentLen
+        else:   # when segment is '?'
+            if not i == 0:
+                mergeLen = segmentsArr[i]
+                merge_wildcard(txt)
+            else:
+                previousSegZ = [-segmentsArr[0]] * n
+            cumLen += -segmentsArr[i]
+
+
+
+
+
 if __name__ == '__main__':
-    txt_file = open(sys.argv[1], "r")
-    pat_file = open(sys.argv[2], "r")
+    # txt_file = open(sys.argv[1], "r")
+    # pat_file = open(sys.argv[2], "r")
 
     # print("pattern found at index", z_algorithm(txt_file.read(), pat_file.read()))
+    pass
+
+
