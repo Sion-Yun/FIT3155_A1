@@ -2,15 +2,10 @@ __author__ = "Yun Sion"
 # Github = https://github.com/Sion-Yun/FIT3155_A1
 import sys
 
-cumLen, segmentLen = 0, 0
-currentSegZ = []
-previousSegZ = []
-segmentsArr = []
-noMatch = False
 
 def z_algo(txt) -> [int]:
     """
-    z_algorithm.
+    Z-algorithm.
 
     time complexity:
         O(n), for n being the length of text.
@@ -56,148 +51,180 @@ def z_algo(txt) -> [int]:
                 r -= 1
     return z  # return all z-values
 
-# TODO - make class...
-def extract_substrings(pat: str):
+
+class Wildcard:
     """
-    Returns a list of substrings from the input pat that are separated by the '!' character.
+    A class to perform pattern matching using wildcard and Z-algorithm in segments.
 
-    time complexity:
-        O(m), for m being the length of input pat.
-    space complexity:
-        O(m), for m being the length of input pat.
-
-    :param pat: input pat
-    :return sliced: an array of slicers between the text and '!' in pat
+    :attributes:
+        total_length (int): Cumulative length of matched segments.
+        segment_length (int): Length of the current segment being processed.
+        currZ (list): Z-values for the current segment.
+        prevZ (list): Z-values for the previous segment.
+        segments (list): List of segments to be matched.
+        if_no_hit (bool): Flag indicating if no match was found.
+        n (int): Length of the input text.
+        txt (str): The text to be matched against.
+        wild_length (int): Length of the wildcard segment (when applicable).
     """
-    m = len(pat)
-    substrings = []  # array of the substrings
-    sub = ""  # the substring
-    flag = True  # are we adding a substring?
+    def __init__(self, txt, pat):
+        self.txt = txt
+        self.pat = pat
+        self.n = len(txt)
+        self.m = len(pat)
+        self.substrings = self.extract_substrings()
+        self.currZ = []
+        self.prevZ = []
+        self.segments = []
+        self.total_length = 0
+        self.segment_length = 0
+        self.wild_length = 0
+        self.is_no_hit = False
 
-    for i in range(m):
-        if not pat[i] == '!':
-            if flag:
-                sub += pat[i]
+    def extract_substrings(self):
+        """
+        Extracts substrings from the pattern, separated by the '!' character.
+
+        This method iterates through the input pattern, using '!' as delimiter.
+        The substrings are added to a list, which is the return.
+
+        time complexity:
+            O(m), for m being the length of pat.
+        space complexity:
+            O(m), for m being the length of pat.
+
+        :param self:
+        :return: A list of substrings extracted from pat that are separated by '!'.
+        """
+        substrings = []  # array of the substrings
+        sub = ""  # the substring
+        flag = True  # are we adding a substring?
+
+        for i in range(self.m):
+            if not self.pat[i] == '!':
+                if flag:
+                    sub += self.pat[i]
+                else:
+                    substrings.append(sub)
+                    sub = self.pat[i]
+                    flag = True
             else:
-                substrings.append(sub)
-                sub = pat[i]
-                flag = True
-        else:
-            if flag and sub:
-                substrings.append(sub)
-                flag = False
-                substring = ""
+                if flag and sub:
+                    substrings.append(sub)
+                    flag = False
+                    sub = ""
 
-    # append the last substring if any
-    if flag and sub:
-        substrings.append(sub)
+        # append the last substring if any
+        if flag and sub:
+            substrings.append(sub)
 
-    return substrings
+        return substrings
 
+    def merge_substrings(self):
+        """
+        Merges the extracted substrings (characters) with the Z-values of new segments.
 
-def merge_substrings(txt):
-    """
-    Merges the extracted substrings (characters) with the length of new z_algo segments.
+        time complexity:
+            O(n), for n being the length of text.
+        space complexity:
+            O(n), for n being the length of text.
+        :param self:
+        """
+        arr = [0] * self.n
+        k = self.total_length + self.segment_length  # the maximum length matched after the merge
+        flag = False
 
-    time complexity:
-        O(n), for n being the length of text.
-    space complexity:
-        ???
-    :param txt:
-    """
-    global cumLen, segmentLen, currentSegZ, previousSegZ, noMatch
-    n = len(txt)
-    arr = [0] * n
-    k = cumLen + segmentLen  # represents the max length matched after merge
-    flag = False
+        for i in range(self.n):
+            if i + k > self.n:  # break if the remaining chars are fewer than the merged length
+                break
 
-    # TODO - clean later
-    for i in range(n):
-        if i + k > n:  # stop looping if the remaining is < length after merged
-            break
+            if self.prevZ[i] == self.total_length:
+                if self.currZ[i + self.total_length + self.segment_length + 1] == self.segment_length:
+                    flag = True
+                    arr[i] = k
 
-        if previousSegZ[i] == cumLen:
-            if currentSegZ[i + cumLen + segmentLen + 1] == segmentLen:
-                flag = True
-                arr[i] = k
+        # if no match found, set the flag to stop further comparisons
+        if not flag:
+            self.is_no_hit = True
 
-    # a no match found pointer to stop comparing further segments
-    if not flag:
-        noMatch = True
+        # update the newly merged Z-values
+        self.prevZ = arr
 
-    previousSegZ = arr  # make this as previous segment of Z
+    def merge_wildcard(self):
+        """
+        Merges the extracted substrings with the length of new wildcard Z-segments.
+        This method is used when the segment is a wildcard, which is represented as a negative value.
 
-# Function that merges previous processed zarray to length of '?'
-# O(n) - n is len(txt)
-def merge_wildcard(txt):
-    """
-    Merges the extracted substrings with the length of new z_algo segments.
+        time complexity:
+            O(n), for n being the length of text.
+        space complexity:
+            O(n), for n being the length of text.
+        :param self:
+        """
+        arr = [0] * self.n
+        k = self.total_length - self.wild_length  # the maximum length matched after the merge
 
-    time complexity:
-        O(n), for n being the length of text.
-    space complexity:
-        O(n), for n being the length of text.
-    :param txt:
-    """
-    global cumLen, mergeLen, previousSegZ
-    n = len(txt)
-    arr = [0] * n
-    k = cumLen - mergeLen  # represents the max length matched after merge
+        # CASE: the first segment is a character segment and the array is larger than n
+        shift = 0
+        if len(self.prevZ) > self.n:
+            shift = len(self.prevZ) - self.n
 
-    # TODO - later
-    # this handle the case when first segment is characters segment where the array is not in
-    # size of n, so when merging, it needs a shift of s
-    s = 0
-    if len(previousSegZ) > n:
-        s = len(previousSegZ) - n
+        for i in range(shift, self.n):
+            if i - shift + k > self.n:  # break if the remaining characters are fewer than the merged length
+                break
 
-    for i in range(s, n):
-        if i - s + k > n:  # stop looping if the remaining is < length after merged
-            break
+            if self.prevZ[i] == self.total_length:  # update the matched length in the merged array
+                arr[i - shift] = k
 
-        if previousSegZ[i] == cumLen:  # update wanted length
-            arr[i - s] = k
+        # update the newly merged Z - values
+        self.prevZ = arr
 
-    previousSegZ = arr  # make this as previous segment of Z
+    def match(self):
+        """
+        Performs the pattern matching on the text based on the segments array.
+        This method loops through the segments (of character or wildcards)
+        and updates Z-values by calling merge_substrings or merge_wildcard, depending on the segment type.
+        The matching process combines results of all segments.
 
-# Main function to do the matching
-# O(k(n+m/k)) - k is total number of segments, n is len(txt), m is len(pat)
-def match(txt):
-    global cumLen, segmentLen, currentSegZ, previousSegZ, noMatch
-    n = len(txt)
+        time complexity:
+            O(k(n + m/k)), for k: the number of segments, n: the length of the txt, m: the length of the pat.
+        space complexity:
+            O(n), n being the length of the txt.
 
-    for i in range(len(segmentsArr)):
-        if noMatch:    # stop matching further segments, if previous segment hasn't found a match
-            break
+        :param self:
+        """
 
-        if isinstance(segmentsArr[i], str):    # when segment is characters
-            x = segmentsArr[i] + "$" + txt
-            segmentLen = len(segmentsArr[i])
+        for i in range(len(self.segments)):
+            if self.is_no_hit:  # stop matching further segments if no match was found in prev
+                break
 
-            if not i == 0:
-                currentSegZ = z_algo(x)
-                merge_substrings(txt)
-            else:
-                previousSegZ = z_algo(x)
+            if isinstance(self.segments[i], str):  # segment is a series of char
+                x = self.segments[i] + "$" + self.txt
+                self.segment_length = len(self.segments[i])
 
-            cumLen += segmentLen
-        else:   # when segment is '?'
-            if not i == 0:
-                mergeLen = segmentsArr[i]
-                merge_wildcard(txt)
-            else:
-                previousSegZ = [-segmentsArr[0]] * n
-            cumLen += -segmentsArr[i]
+                if i != 0:  # update z-values for current segment and merge with prev
+                    self.currZ = z_algo(x)
+                    self.merge_substrings()
+                else:
+                    self.prevZ = z_algo(x)  # case: first segment
 
+                self.total_length += self.segment_length  # update the total length of matched segments
+            else:  # when segment is '!', the wildcard
+                if i != 0:
+                    self.wild_length = self.segments[i]
+                    self.merge_wildcard()
+                else:
+                    # initialize prev Z-values as the wildcard length for the first segment
+                    self.prevZ = [-self.segments[0]] * self.n
 
-
+                # update total length
+                self.total_length += -self.segments[i]
 
 
 if __name__ == '__main__':
+    # TODO - accept file
     # txt_file = open(sys.argv[1], "r")
     # pat_file = open(sys.argv[2], "r")
 
     # print("pattern found at index", z_algorithm(txt_file.read(), pat_file.read()))
     pass
-
-
