@@ -52,55 +52,47 @@ def z_algo(txt) -> [int]:
     return z  # return all z-values
 
 
-# TODO change
-# Function that returns an array of segments between characters and '?' in pat
-# "de??du?" -> ['de', -2, 'du', -1]
-# O(m) - m is len(pat)
-def slice_txt(pat):
+def extract_substrings(txt: str):
     """
-    Returns an array of slicers between the text and '!' in pat
+    Returns a list of substrings from the input string that are separated by the '!' character.
+
     time complexity:
-        O(m), for m being the length of pat.
+        O(n), for n being the length of input string.
     space complexity:
-    ???
+        O(n), for n being the length of input string.
 
-    :param pat:
-    :return:
+    :param txt: input string
+    :return sliced: an array of slicers between the text and '!' in pat
     """
-    m = len(pat)
-    x = []
-    i = 0
-    k = 0
-    y = ""
+    # TODO - bit confusing names
+    n = len(txt)
+    substrings = []  # array of slicers to be returned
+    substring = ""  # the current substring
+    flag = True  # are we adding a substring?
 
-    while i < m:
-        if not pat[i] == '!':
-            if k >= 0:
-                y += pat[i]
-                k += 1
+    for i in range(n):
+        if not txt[i] == '!':
+            if flag:
+                substring += txt[i]
             else:
-                x.append(k)
-                y = ""
-                y += pat[i]
-                k = 1
+                substrings.append(substring)
+                substring = txt[i]
+                flag = True
         else:
-            if k < 0:
-                k -= 1
-            else:
-                if i != 0:
-                    x.append(y)
-                k = -1
-        i += 1
-    if k > 0:
-        x.append(y)
-    else:
-        x.append(k)
+            if flag and substring:
+                substrings.append(substring)
+                flag = False
+                substring = ""
 
-    return x
+    # append the last substring if any
+    if flag and substring:
+        substrings.append(substring)
+
+    return substrings
 
 
 if __name__ == '__main__':
     txt_file = open(sys.argv[1], "r")
     pat_file = open(sys.argv[2], "r")
 
-    print("pattern found at index", z_algorithm(txt_file.read(), pat_file.read()))
+    # print("pattern found at index", z_algorithm(txt_file.read(), pat_file.read()))
