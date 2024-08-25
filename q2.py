@@ -101,29 +101,6 @@ class Wildcard:
         sub = ""  # the substring
         # k = 0  # counter
         m = len(self.pat)
-        # TODO - pending change
-        # for i in range(m):
-        #     if not self.pat[i] == '!':
-        #         if k >= 0:
-        #             sub += self.pat[i]
-        #             k += 1
-        #         else:
-        #             substrings.append(sub)
-        #             sub = ""
-        #             sub += self.pat[i]
-        #             k = 1
-        #     else:
-        #         if k < 0:
-        #             k -= 1
-        #         else:
-        #             if i != 0:
-        #                 substrings.append(sub)
-        #             k = -1
-        # if k > 0:
-        #     substrings.append(sub)
-        # else:
-        #     substrings.append(k)
-        # return substrings
 
         for i in range(m):
             if self.pat[i] == '!':
@@ -137,7 +114,6 @@ class Wildcard:
 
         if sub:
             substrings.append(sub)  # append any remaining substring
-
         return substrings
 
     def merge_substrings(self):
@@ -159,13 +135,11 @@ class Wildcard:
                 break
 
             if self.prevZ[i] == self.total_length:
-                break
+                if self.currZ[i + self.total_length + self.segment_length + 1] == self.segment_length:
+                    arr[i] = k
+                    flag = True
 
-            if self.currZ[i + self.total_length + self.segment_length + 1] == self.segment_length:
-                flag = True
-                arr[i] = k
-
-        # if no match found, set the flag to stop further comparisons
+        # if no match found, set the flag (attribute) to stop further comparisons
         if not flag:
             self.is_no_hit = True
 
@@ -216,12 +190,10 @@ class Wildcard:
         :param self:
         """
         for i in range(len(self.segments)):
-            print(self.segments)
             if self.is_no_hit:  # stop matching further segments if no match was found in prev
                 break
 
             if isinstance(self.segments[i], str):  # segment is a series of char, string
-                # print("read str")
                 merged_str = self.segments[i] + "$" + self.txt
                 self.segment_length = len(self.segments[i])
 
@@ -229,17 +201,17 @@ class Wildcard:
                     self.currZ = z_algo(merged_str)
                     self.merge_substrings()
                 else:
-                    self.prevZ = z_algo(merged_str)  # case: first segment
+                    z_values = z_algo(merged_str)
+                    self.prevZ = z_values[len(self.segments[i]) + 1:]  # skip pattern and $
 
                 self.total_length += self.segment_length  # update the total length of matched segments
             else:
-                # print("matching wildcard")
-                if i != 0:
+                if i == 0:  # Wildcard is the first segment
+                    # Initialize prevZ to allow any position to match the next segment
+                    self.prevZ = [0] * self.n
+                else:
                     self.wild_length = self.segments[i]
                     self.merge_wildcard()
-                else:
-                    # initialize prev Z-values as the wildcard length for the first segment
-                    self.prevZ = [-self.segments[0]] * self.n
 
                 # update total length
                 self.total_length += -self.segments[i]
