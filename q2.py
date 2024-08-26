@@ -3,17 +3,16 @@ __author__ = "Yun Sion"
 import sys
 
 
-def z_algo(txt) -> [int]:
+def z_algo(txt: str) -> [int]:
     """
-    Z-algorithm.
+    Z-algorithm; computes Z-values of a given string.
 
     time complexity:
         O(n), for n being the length of text.
     space complexity:
         O(n), for n being the length of text.
 
-    :argument:
-        txt (str): The text to find z-values.
+    :argument: txt (str): The text to find z-values.
     :return: z_arr: array of all z-values.
     """
     n = len(txt)  # input string
@@ -68,6 +67,12 @@ class Wildcard:
         wild_length (int): Length of the wildcard segment (when applicable).
     """
     def __init__(self, txt, pat):
+        """
+        The initialisation of Wildcard class.
+
+        :param txt: the text to match.
+        :param pat: the pattern to match.
+        """
         self.txt = txt
         self.pat = pat
         self.n = len(txt)
@@ -90,9 +95,9 @@ class Wildcard:
         The substrings are added to a list, which is the return.
 
         time complexity:
-            O(m), for m being the length of pat.txt.
+            O(m), for m being the length of pat.
         space complexity:
-            O(m), for m being the length of pat.txt.
+            O(m), for m being the length of pat.
 
         :param self:
         :return: A list of substrings extracted from pat.txt that are separated by '!'.
@@ -178,8 +183,6 @@ class Wildcard:
     def match(self):
         """
         Performs the pattern matching on the text based on the segments array.
-        This method loops through the segments (of character or wildcards)
-        and updates Z-values by calling merge_substrings or merge_wildcard, depending on the segment type.
         The matching process combines results of all segments.
 
         time complexity:
@@ -221,7 +224,7 @@ class Wildcard:
         Generates the output file.
 
         time complexity:
-            O(n - m), n is the length of txt and m is the length of pat.txt.
+            O(n - m), n is the length of txt and m is the length of pat.
         """
         m = len(self.pat)
         with open("output_q2.txt", "w+") as f:
