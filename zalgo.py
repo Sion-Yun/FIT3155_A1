@@ -5,7 +5,7 @@ import sys
 
 def z_algorithm(txt: str, pat: str) -> [int]:
     """
-    TODO -  Function and approach
+    Z-algorithm for pattern matching.
 
     time complexity:
         O(m + n), for m being the length of pattern and n being the length of text.
