@@ -65,7 +65,7 @@ def bad_character(pat: str):
     :return: bc_table: A list of entries to the last occurrence of each ASCII character.
     """
     bad_char_table = []
-    ascii_range = 126 - 33  # using only the printable ASCII characters
+    ascii_range = 126 - 36  # using only the printable ASCII [37, 126]
 
     # initialising bad char table (or 2-D array)
     for _ in range(ascii_range):
@@ -74,7 +74,7 @@ def bad_character(pat: str):
 
     # filling up the bad char table
     for i in range(len(pat)):
-        char_i = ord(pat[i]) - 33  # index of current char
+        char_i = ord(pat[i]) - 36  # index of current char
         bad_char_table[char_i][i] = i  # position of the char in pat
 
     # updating the table
@@ -185,8 +185,8 @@ def boyer_moore(txt: str, pat: str):
             bad_char = txt[shift + j]
 
             # bad-char shift
-            if ord(bad_char) - 33 >= 0:
-                bc_shift = j - bc_table[ord(bad_char) - 33][j]
+            if ord(bad_char) - 36 >= 0:
+                bc_shift = j - bc_table[ord(bad_char) - 36][j]
             else:
                 bc_shift = j + 1
 
