@@ -88,8 +88,10 @@ def bad_character(pat: str):
 
     return bad_char_table
 
-def good_suffix(pat: str):
+def good_suffix_legacy(pat: str):
     """
+    *This is not the implementation for A1*
+    (This is not the stricter good suffix rule, therefore renamed as legacy for A1.)
     Creates a good suffix table of the pattern.
 
     Time complexity:
@@ -152,18 +154,17 @@ def boyer_moore(txt: str, pat: str):
         txt (str): The text to match.
         pat (str): The pattern to match.
     """
-    # TODO - galil's optimisation
     n = len(txt)
     m = len(pat)
     result = []
 
-    # checking if the inputs are suitable for the boyer-moore algo.
+    # checking if the inputs are suitable for the boyer-moore algo
     if n < m or n == 0 or m == 0:
         return result
 
     # preprocessing the pattern
     bc_table = bad_character(pat)  # Bad character table
-    gs_list = good_suffix(pat)  # Good suffix table
+    # gs_list = good_suffix_legacy(pat)  # Good suffix table (excluded for A1)
     mp_list = matched_prefix(pat)  # Matched prefix table
 
     shift = 0  # initial shift
@@ -181,18 +182,32 @@ def boyer_moore(txt: str, pat: str):
             result.append(shift)  # append position
             shift += m - mp_list[0] if m > 1 else 1  # shift by m - the matched prefix
         else:
+            bad_char = txt[shift + j]
+
             # bad-char shift
-            bc_shift = j - bc_table[ord(txt[shift + j]) - 33][j] if ord(txt[shift + j]) - 33 >= 0 else j + 1
-            # good_suffix shift
-            gs_shift = gs_list[j] if j < m - 1 else 0
+            if ord(bad_char) - 33 >= 0:
+                bc_shift = j - bc_table[ord(bad_char) - 33][j]
+            else:
+                bc_shift = j + 1
+
+            # *stricter* good_suffix shift for A1
+            gs_shift = 0
+            if j < m - 1:
+                # finding the rightmost instance of good suffix followed by the bad character
+                for p in range(j + 1, m):
+                    # req 1:  pat[p − m + k + 1 . . . p] ≡ pat[k + 1 . . . .m]
+                    if pat[p - m + j + 1: p + 1] == pat[j + 1:]:
+                        # req 2: pat[p − m + k], is identical to the bad character
+                        if p - m + j >= 0 and pat[p - m + j] == bad_char:
+                            gs_shift = m - p
+                            break
+
             # shift by the maximum of the bad character and good suffix shifts
             shift += max(bc_shift, gs_shift)
 
     with open("output_q1.txt", "w+") as f:
         for i in range(len(result)):
             f.write("%d\n" % (result[i] + 1))  # shift + 1 to adjust for 1-based indexing
-
-    # return result
 
 
 if __name__ == '__main__':
@@ -201,8 +216,3 @@ if __name__ == '__main__':
     pat_file = open(sys.argv[2], "r")
 
     boyer_moore(txt_file.read(), pat_file.read())
-
-    # text = "abcdabcdabcd"
-    # pattern = "abc"
-    # result = boyer_moore(text, pattern)
-    # print(result)
