@@ -3,8 +3,6 @@ __author__ = "Yun Sion"
 
 import sys
 
-ALPHABET_SIZE = 256
-
 
 def z_algo(txt: str) -> [int]:
     """
@@ -54,31 +52,147 @@ def z_algo(txt: str) -> [int]:
                 r -= 1
     return z  # return all z-values
 
-def bad_char(pat):
-    pass
-
-def good_suffix(pat):
-    pass
-
-def matched_prefix(pat):
-    pass
-
-
-def boyer_moore(txt: str, pat:str) -> [int]:
+def bad_character(pat: str):
     """
-    Function and approach
+    Creates a bad-character table of all printable ASCII characters.
 
-    time complexity:
-    space complexity:
+    Time complexity:
+        O(m * d), for m being the length of the pat and d is the number of distinct ASCII characters.
+    Space complexity:
+        O(m * d), for the bad character table.
+
+    :arg: pat (str): The pattern string.
+    :return: bc_table: A list of entries to the last occurrence of each ASCII character.
+    """
+    bad_char_table = []
+    ascii_range = 126 - 33  # using only the printable ASCII characters
+
+    # initialising bad char table (or 2-D array)
+    for _ in range(ascii_range):
+        row = [-1] * len(pat)
+        bad_char_table.append(row)
+
+    # filling up the bad char table
+    for i in range(len(pat)):
+        char_i = ord(pat[i]) - 33  # index of current char
+        bad_char_table[char_i][i] = i  # position of the char in pat
+
+    # updating the table
+    for i in range(len(bad_char_table)):
+        last_seen = -1
+        for j in range(len(bad_char_table[0])):
+            if bad_char_table[i][j] != -1:
+                last_seen = bad_char_table[i][j]
+            else:
+                bad_char_table[i][j] = last_seen
+
+    return bad_char_table
+
+def good_suffix(pat: str):
+    """
+    Creates a good suffix table of the pattern.
+
+    Time complexity:
+        O(m), for m being the length of the pattern.
+    Space complexity:
+        O(m), for the good suffix array.
+
+
+    :arg: pat (str): The pattern string.
+    :return: good_suffixes: A list of the good suffix array of the pattern
+    """
+    m = len(pat)
+    good_suffixes = [0] * m  # initialising the good suffix array
+
+    # creating z-suffix array with z_algorithm using the reversed pattern
+    z_suffix = z_algo(pat[::-1])[::-1]  # reverse the result of z_algo(reversed_pat)
+
+    # filling the good suffix array
+    for p in range(m-1):
+        j = m - z_suffix[p] - 1
+        if j >= 0:
+            good_suffixes[j] = p + 1  # the shift
+    return good_suffixes
+
+def matched_prefix(pat: str):
+    """
+    Creates a matched prefix table of the pattern.
+
+    Time complexity:
+        O(m), for m being the length of pattern.
+    Space complexity:
+        O(m), for the matched prefix list.
+
+    :arg: pat (str): The pattern string.
+    :return: mp_array: A list of the matched prefix of the pattern.
+    """
+    m = len(pat)
+    match_prefixes = [0] * m
+    z_prefix = z_algo(pat)  # Z-prefix list
+
+    # filling the matched prefix array
+    for i in range(m):
+        if (z_prefix[m-i-1] + m-i-1) != m and m-i < m:
+            match_prefixes[m-i-1] = match_prefixes[m-i]  # copy the prefix if no full match
+        else:
+            match_prefixes[m-i-1] = z_prefix[m-i-1]  # using the z-prefix
+
+    return match_prefixes
+
+def boyer_moore(txt: str, pat: str):
+    """
+    The Boyer-Moore string search algorithm.
+
+    Time complexity:
+        O(n + m), for n being the length of the text and m being the length of the pattern.
+    Space complexity:
+        O(m * d), d for the number of ASCII characters, and m for the good suffix and matched prefix arrays.
 
     :argument:
         txt (str): The text to match.
         pat (str): The pattern to match.
-    :return: the positions of all instances of the pattern observed in that text.
     """
-    # TODO - scan right to left + galil's optimisation
-    # TODO - bad character, good suffix, matched prefix
-    pass
+    # TODO - galil's optimisation
+    n = len(txt)
+    m = len(pat)
+    result = []
+
+    # checking if the inputs are suitable for the boyer-moore algo.
+    if n < m or n == 0 or m == 0:
+        return result
+
+    # preprocessing the pattern
+    bc_table = bad_character(pat)  # Bad character table
+    gs_list = good_suffix(pat)  # Good suffix table
+    mp_list = matched_prefix(pat)  # Matched prefix table
+
+    shift = 0  # initial shift
+
+    # searching the pat in the txt
+    while shift <= n - m:
+        j = m - 1  # last char of the pat
+
+        # right-to-left search
+        while j >= 0 and pat[j] == txt[shift + j]:
+            j -= 1
+
+        # pattern found
+        if j < 0:
+            result.append(shift)  # append position
+            shift += m - mp_list[0] if m > 1 else 1  # shift by m - the matched prefix
+        else:
+            # bad-char shift
+            bc_shift = j - bc_table[ord(txt[shift + j]) - 33][j] if ord(txt[shift + j]) - 33 >= 0 else j + 1
+            # good_suffix shift
+            gs_shift = gs_list[j] if j < m - 1 else 0
+            # shift by the maximum of the bad character and good suffix shifts
+            shift += max(bc_shift, gs_shift)
+
+    with open("output_q1.txt", "w+") as f:
+        for i in range(len(result)):
+            f.write("%d\n" % (result[i] + 1))  # shift + 1 to adjust for 1-based indexing
+
+    # return result
 
 
 if __name__ == '__main__':
@@ -87,3 +201,8 @@ if __name__ == '__main__':
     pat_file = open(sys.argv[2], "r")
 
     boyer_moore(txt_file.read(), pat_file.read())
+
+    # text = "abcdabcdabcd"
+    # pattern = "abc"
+    # result = boyer_moore(text, pattern)
+    # print(result)
